@@ -1,0 +1,48 @@
+<script type="text/javascript">
+    function getToken(){
+        cookiekey = 'csrftoken='
+        return document.cookie.split(";").map(i => i.trim()).filter(i=>i.startsWith(cookiekey))[0].slice(cookiekey.length,)
+    }
+    {
+        const form = (()=>{
+            const exists = document.getElementById("___filterform_{{ widget.name }}")
+            if (exists) return exists
+            const form = document.createElement("form")
+            form.id = "___filterform_{{ widget.name }}"
+            form.name = "___filterform_{{ widget.name }}"
+            form.method = "post"
+            form.action = ""
+            document.body.appendChild(form)
+            
+            const submit = document.querySelector("{{ widget.name }} > button[type=submit]")
+            
+
+            form.addEventListener("submit", (e)=>{
+                e.stopPropagation()
+                e.preventDefault()
+                console.log(form)
+                const data = new FormData(form, submit)
+                console.log(JSON.stringify(Object.fromEntries(data.entries())))
+                const response = fetch("/admin/mock/product/update_product_admin/", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: new Headers({
+                        "X-CSRFToken": getToken()
+                    }),
+                    body: data, //JSON.stringify(Object.fromEntries(data.entries()))
+                })
+            })
+            return form
+        })()
+    }
+    
+</script>
+
+<fieldset id="{{ widget.name }}" form="___filterform_{{ widget.name }}">
+    <label for="name">name</label>
+    <input 
+        type="text" form="___filterform_{{ widget.name }}"
+        name="name" {% if widget.value != None %} value="{{ widget.value|stringformat:'s' }}"{% endif %}
+        {% include "django/forms/widgets/attrs.html" %}>
+    <button type="submit" form="___filterform_{{ widget.name }}">search</button>
+</fieldset>

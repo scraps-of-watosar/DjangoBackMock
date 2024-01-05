@@ -1,0 +1,151 @@
+{% load i18n static %}
+<div class="related-widget-wrapper" {% if not model_has_limit_choices_to %}data-model-ref="{{ model }}"{% endif %}>
+    {{ rendered_widget }}
+    {% block links %}
+        {% spaceless %}
+        {% if not is_hidden %}
+
+
+        {% if customed %}
+
+        
+        {% if can_change_related %}
+        <a class="related-widget-wrapper-link change-related" id="change_id_{{ name }}"
+            data-href-template="{{ change_related_template_url_1 }}?{{ url_params }}"
+            data-popup="yes"
+            title="{% blocktranslate %}Change selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-changelink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_add_related %}
+        <a class="related-widget-wrapper-link add-related" id="add_id_{{ name }}"
+            data-popup="yes"
+            href="{{ add_related_url_1 }}?{{ url_params }}"
+            title="{% blocktranslate %}Add another {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-addlink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_delete_related %}
+        <a class="related-widget-wrapper-link delete-related" id="delete_id_{{ name }}"
+            data-href-template="{{ delete_related_template_url_1 }}?{{ url_params }}"
+            data-popup="yes"
+            title="{% blocktranslate %}Delete selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-deletelink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_view_related %}
+          <a class="related-widget-wrapper-link view-related" id="view_id_{{ name }}"
+             data-href-template="{{ change_related_template_url_1 }}?{{ view_related_url_params }}"
+             title="{% blocktranslate %}View selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="" width="20" height="20">
+          </a>
+        {% endif %}
+
+        {% else %}
+
+        {% if can_change_related %}
+        <a class="related-widget-wrapper-link change-related" id="change_id_{{ name }}"
+            data-href-template="{{ change_related_template_url }}?{{ url_params }}"
+            data-popup="yes"
+            title="{% blocktranslate %}Change selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-changelink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_add_related %}
+        <a class="related-widget-wrapper-link add-related" id="add_id_{{ name }}"
+            data-popup="yes"
+            href="{{ add_related_url }}?{{ url_params }}"
+            title="{% blocktranslate %}Add another {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-addlink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_delete_related %}
+        <a class="related-widget-wrapper-link delete-related" id="delete_id_{{ name }}"
+            data-href-template="{{ delete_related_template_url }}?{{ url_params }}"
+            data-popup="yes"
+            title="{% blocktranslate %}Delete selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-deletelink.svg' %}" alt="" width="20" height="20">
+        </a>
+        {% endif %}
+        {% if can_view_related %}
+          <a class="related-widget-wrapper-link view-related" id="view_id_{{ name }}"
+             data-href-template="{{ change_related_template_url }}?{{ view_related_url_params }}"
+             title="{% blocktranslate %}View selected {{ model }}{% endblocktranslate %}">
+            <img src="{% static 'admin/img/icon-viewlink.svg' %}" alt="" width="20" height="20">
+          </a>
+        {% endif %}
+
+        {% endif %}
+
+        {% endif %}
+        {% endspaceless %}
+    {% endblock %}
+</div>
+<script type="text/javascript">
+    function getToken(){
+        cookiekey = 'csrftoken='
+        return document.cookie.split(";").map(i => i.trim()).filter(i=>i.startsWith(cookiekey))[0].slice(cookiekey.length,)
+    }
+    {
+        const select_options = document.querySelectorAll("#{{ id_used_inside }} >  option:not([value=''])")
+        const form = (()=>{
+            const exists = document.getElementById("___filterform_{{ name_used_inside }}")
+            if (exists) return exists
+            const form = document.createElement("form")
+            form.id = "___filterform_{{ name_used_inside }}"
+            form.name = "___filterform_{{ name_used_inside }}"
+            form.method = "post"
+            form.action = ""
+            document.body.appendChild(form)
+            
+            const submit = document.querySelector("{{ name_used_inside }} > button[type=submit]")
+            const change_related = document.getElementById("change_id_{{ name }}")
+            const add_related = document.getElementById("add_id_{{ name }}")
+            const view_related = document.getElementById("view_id_{{ name }}")
+            const default_add_href = add_related.href
+
+            form.addEventListener("submit", (e)=>{
+                e.stopPropagation()
+                e.preventDefault()
+                console.log(form)
+                const formdata = new FormData(form, submit)
+                console.log(formdata, JSON.stringify(Object.fromEntries(formdata.entries())))
+                fetch("/admin/mock/product/update_product_admin/", {
+                    method: "POST",
+                    credentials: "same-origin",
+                    headers: new Headers({
+                        "X-CSRFToken": getToken()
+                    }),
+                    body: formdata, //JSON.stringify(Object.fromEntries(data.entries()))
+                }).then((e)=>e.json()).then(data=>{
+                    console.log("resp", data)
+                    const pk_set = new Set(data.pk)
+                    for (const i of select_options){
+                        const filtered = pk_set.has(i.value)
+                        i.style.display = filtered ? "block" : "none"
+                        if (i.selected && !filtered){
+                            i.parentElement.selectedIndex = -1
+                            change_related.removeAttribute("href")
+                            view_related.removeAttribute("href")
+                        }
+                    }
+                })
+                add_related.href = `${default_add_href}&name=${formdata.get("name")}`
+
+            })
+            return form
+        })()
+    }
+    
+</script>
+
+<div style="margin-top: 15px;margin-bottom: 5px;text-decoration: underline;font-size: 0.82rem;">
+    filter value
+</div>
+<fieldset id="fieldset_{{ name_used_inside }}" form="___filterform_{{ name_used_inside }}" style="display:flex; flex-direction: column;align-items: flex-start">
+    <label>name : 
+        <input style="margin-left:5px" type="text" form="___filterform_{{ name_used_inside }}"
+            name="name" {% if selected != None %} value="{{ selected.name|stringformat:'s' }}"{% endif %}/>
+    </label>
+    <button type="submit" form="___filterform_{{ name_used_inside }}">search</button>
+</fieldset>
